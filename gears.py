@@ -2,6 +2,22 @@
 #------------------------------------------------------------------------------
 
 import math
+import itertools
+
+#------------------------------------------------------------------------------
+# common thread pitches
+
+_common_metric = (
+    0.20, 0.25, 0.35, 0.40, 0.45, 0.50, 0.60, 0.70,
+    0.75, 0.80, 1.00, 1.25, 1.50, 1.75, 2.00, 2.50,
+    3.00, 3.50, 4.00, 4.50, 5.00, 5.50, 6.00,
+)
+
+_common_inch = (
+    8, 9, 10, 11, 12, 13, 14, 16,
+    18, 20, 24, 28, 32, 36, 40, 44,
+    48, 56, 64, 72, 80
+)
 
 #------------------------------------------------------------------------------
 # geometric constants
@@ -132,11 +148,11 @@ def is_valid(cfg , gears):
 
 #------------------------------------------------------------------------------
 
-def display_gears(cfg, gears, goal, mode):
+def display_gears(soln, goal, mode):
 
-    pitch = calc_pitch(cfg, gears)
+    (pitch, cfg, gears) = soln
 
-    if mode == 'imperial':
+    if mode == 'inch':
         print('desired tpi = %f' % (1.0 / goal))
         print('actual tpi = %f' % (1.0 / pitch))
     elif mode == 'metric':
@@ -164,15 +180,74 @@ def display_gears(cfg, gears, goal, mode):
 
 #------------------------------------------------------------------------------
 
-def search_gears(pitch):
-    """find the gear configuration most closely matching the provided pitch"""
-    pass
+def generate_solutions(soln, cfg, gear_set):
+    """generate pitch solutions for a given gear configuration and set of gears"""
+    for gears in gear_set:
+        if is_valid(cfg, gears):
+            soln.append((calc_pitch(cfg, gears), cfg, gears))
+
+def generate_change_gears():
+    """generate a sorted list of pitch solutions across all gear configurations and gear sets"""
+    soln = []
+    # generate the gear permutations
+    _3gears = tuple(itertools.permutations(_gear_set, 3))
+    _4gears = tuple(itertools.permutations(_gear_set, 4))
+    _5gears = tuple(itertools.permutations(_gear_set, 5))
+    # pad all gear sets to 5 elements with dummys
+    _3gears = tuple([(a, b, c, 0, 0)for (a, b, c) in _3gears])
+    _4gears = tuple([(a, b, c, d, 0)for (a, b, c, d) in _4gears])
+    # generate the solutions for each gear configuration
+    generate_solutions(soln, 'a-b-c', _3gears)
+    generate_solutions(soln, 'ab-c-d', _4gears)
+    generate_solutions(soln, 'a-bc-d', _4gears)
+    generate_solutions(soln, 'ab-cd-e', _5gears)
+    soln.sort()
+    return soln
+
+#------------------------------------------------------------------------------
+
+def search_gears(soln, pitch):
+    """return the list index of the gear configuration most closely matching the pitch"""
+    if not soln:
+        return None
+    # do a binary search of the sorted solution list
+    hi = len(soln) - 1
+    lo = 0
+    while hi - lo > 1:
+        i = (hi + lo) / 2
+        if soln[i][0] >= pitch:
+            # move to lower pitch values
+            hi = i
+        else:
+            # move to higher pitch values
+            lo = i
+    # pick the index with the lowest error
+    hi_error = soln[hi][0] - pitch
+    lo_error = pitch - soln[lo][0]
+    return (hi, lo)[lo_error <= hi_error]
 
 #------------------------------------------------------------------------------
 
 def main():
-    goal_pitch = 1.75 / _MM_PER_INCH
-    display_gears('ab-cd-e', (68.0, 72.0, 80.0, 75.0, 48.0), goal_pitch, 'metric')
+    soln = generate_change_gears()
+
+    inch_solns = []
+    for tpi in _common_inch:
+        pitch = 1.0 / float(tpi)
+        inch_solns.append((search_gears(soln, pitch), pitch))
+
+    metric_solns = []
+    for mm in _common_metric:
+        pitch = float(mm) / _MM_PER_INCH
+        metric_solns.append((search_gears(soln, pitch), pitch))
+
+    # inch sizes
+    for (i, pitch) in inch_solns:
+        display_gears(soln[i], pitch, 'inch')
+
+    # metric sizes
+    for (i, pitch) in metric_solns:
+        display_gears(soln[i], pitch, 'metric')
 
 #------------------------------------------------------------------------------
 
