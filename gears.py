@@ -3,6 +3,7 @@
 
 import math
 import itertools
+import html
 
 #------------------------------------------------------------------------------
 # common thread pitches
@@ -14,9 +15,9 @@ _common_metric = (
 )
 
 _common_inch = (
-    8, 9, 10, 11, 12, 13, 14, 16,
-    18, 20, 24, 28, 32, 36, 40, 44,
-    48, 56, 64, 72, 80
+    8.0, 9.0, 10.0, 11.0, 11.5, 12.0, 13.0, 14.0, 16.0,
+    18.0, 20.0, 24.0, 28.0, 32.0, 36.0, 40.0, 44.0,
+    48.0, 56.0, 64.0, 72.0, 80.0
 )
 
 #------------------------------------------------------------------------------
@@ -148,47 +149,15 @@ def is_valid(cfg , gears):
 
 #------------------------------------------------------------------------------
 
-def display_gears(soln, goal, mode):
-
-    (pitch, cfg, gears) = soln
-
-    if mode == 'inch':
-        print('desired tpi = %f' % (1.0 / goal))
-        print('actual tpi = %f' % (1.0 / pitch))
-    elif mode == 'metric':
-        print('desired pitch = %f mm' % (goal * _MM_PER_INCH))
-        print('actual pitch = %f mm' % (pitch * _MM_PER_INCH))
-    else:
-        assert(0)
-
-    error = math.fabs(pitch - goal)
-    error = (error / goal) * 100.0
-    print('pitch error = %.2f%%' % error)
-
-    (a, b, c, d, e) = gears
-
-    if cfg == 'a-b-c':
-        print('%d-%d-%d' % (a, b, c))
-    elif cfg == 'ab-cd-e':
-        print('%d:%d-%d:%d-%d' % (a, b, c, d, e))
-    elif cfg == 'ab-c-d':
-        print('%d:%d-%d-%d' % (a, b, c, d))
-    elif cfg == 'a-bc-d':
-        print('%d-%d:%d-%d' % (a, b, c, d))
-    else:
-        assert(0)
-
-#------------------------------------------------------------------------------
-
-def generate_solutions(soln, cfg, gear_set):
+def generate_sets(sets, cfg, gear_set):
     """generate pitch solutions for a given gear configuration and set of gears"""
     for gears in gear_set:
         if is_valid(cfg, gears):
-            soln.append((calc_pitch(cfg, gears), cfg, gears))
+            sets.append((calc_pitch(cfg, gears), cfg, gears))
 
 def generate_change_gears():
-    """generate a sorted list of pitch solutions across all gear configurations and gear sets"""
-    soln = []
+    """generate a sorted list of change gear sets across all gear configurations and gear sets"""
+    sets = []
     # generate the gear permutations
     _3gears = tuple(itertools.permutations(_gear_set, 3))
     _4gears = tuple(itertools.permutations(_gear_set, 4))
@@ -197,57 +166,177 @@ def generate_change_gears():
     _3gears = tuple([(a, b, c, 0, 0)for (a, b, c) in _3gears])
     _4gears = tuple([(a, b, c, d, 0)for (a, b, c, d) in _4gears])
     # generate the solutions for each gear configuration
-    generate_solutions(soln, 'a-b-c', _3gears)
-    generate_solutions(soln, 'ab-c-d', _4gears)
-    generate_solutions(soln, 'a-bc-d', _4gears)
-    generate_solutions(soln, 'ab-cd-e', _5gears)
-    soln.sort()
-    return soln
+    generate_sets(sets, 'a-b-c', _3gears)
+    generate_sets(sets, 'ab-c-d', _4gears)
+    generate_sets(sets, 'a-bc-d', _4gears)
+    generate_sets(sets, 'ab-cd-e', _5gears)
+    sets.sort()
+    return sets
 
 #------------------------------------------------------------------------------
 
-def search_gears(soln, pitch):
+def search_gears(sets, pitch):
     """return the list index of the gear configuration most closely matching the pitch"""
-    if not soln:
+    if not sets:
         return None
     # do a binary search of the sorted solution list
-    hi = len(soln) - 1
+    hi = len(sets) - 1
     lo = 0
     while hi - lo > 1:
         i = (hi + lo) / 2
-        if soln[i][0] >= pitch:
+        if sets[i][0] >= pitch:
             # move to lower pitch values
             hi = i
         else:
             # move to higher pitch values
             lo = i
     # pick the index with the lowest error
-    hi_error = soln[hi][0] - pitch
-    lo_error = pitch - soln[lo][0]
+    hi_error = sets[hi][0] - pitch
+    lo_error = pitch - sets[lo][0]
     return (hi, lo)[lo_error <= hi_error]
 
 #------------------------------------------------------------------------------
 
+def gears_txt(soln, goal, mode):
+
+    s = []
+    (pitch, cfg, gears) = soln
+
+    if mode == 'inch':
+        s.append('desired tpi = %f' % (1.0 / goal))
+        s.append('actual tpi = %f' % (1.0 / pitch))
+    elif mode == 'metric':
+        s.append('desired pitch = %f mm' % (goal * _MM_PER_INCH))
+        s.append('actual pitch = %f mm' % (pitch * _MM_PER_INCH))
+    else:
+        assert(0)
+
+    error = math.fabs(pitch - goal)
+    error = (error / goal) * 100.0
+    s.append('pitch error = %.2f%%' % error)
+
+    (a, b, c, d, e) = gears
+
+    if cfg == 'a-b-c':
+        s.append('%d-%d-%d' % (a, b, c))
+    elif cfg == 'ab-cd-e':
+        s.append('%d:%d-%d:%d-%d' % (a, b, c, d, e))
+    elif cfg == 'ab-c-d':
+        s.append('%d:%d-%d-%d' % (a, b, c, d))
+    elif cfg == 'a-bc-d':
+        s.append('%d-%d:%d-%d' % (a, b, c, d))
+    else:
+        assert(0)
+
+    return '\n'.join(s)
+
+
+def gears_html(soln, goal, mode):
+
+    td = []
+    (pitch, cfg, gears) = soln
+
+    if mode == 'inch':
+        td.append(html.tag_td('%.1f' % (1.0 / goal)))
+        td.append(html.tag_td('%.2f' % (1.0 / pitch)))
+    elif mode == 'metric':
+        td.append(html.tag_td('%.2f' % (goal * _MM_PER_INCH)))
+        td.append(html.tag_td('%.3f' % (pitch * _MM_PER_INCH)))
+    else:
+        assert(0)
+
+    error = math.fabs(pitch - goal)
+    error = (error / goal) * 100.0
+    td.append(html.tag_td('%.2f%%' % error))
+
+    (a, b, c, d, e) = gears
+
+    if cfg == 'a-b-c':
+        td.append(html.tag_td('%d-%d-%d' % (a, b, c)))
+    elif cfg == 'ab-cd-e':
+        td.append(html.tag_td('%d:%d-%d:%d-%d' % (a, b, c, d, e)))
+    elif cfg == 'ab-c-d':
+        td.append(html.tag_td('%d:%d-%d-%d' % (a, b, c, d)))
+    elif cfg == 'a-bc-d':
+        td.append(html.tag_td('%d-%d:%d-%d' % (a, b, c, d)))
+    else:
+        assert(0)
+
+    return html.indent('\n'.join(td))
+
+#------------------------------------------------------------------------------
+
+_ofile = 'stuff.html'
+
 def main():
-    soln = generate_change_gears()
+
+    # generate the complete set of valid change gears
+    sets = generate_change_gears()
 
     inch_solns = []
     for tpi in _common_inch:
         pitch = 1.0 / float(tpi)
-        inch_solns.append((search_gears(soln, pitch), pitch))
+        inch_solns.append((search_gears(sets, pitch), pitch))
 
     metric_solns = []
     for mm in _common_metric:
         pitch = float(mm) / _MM_PER_INCH
-        metric_solns.append((search_gears(soln, pitch), pitch))
+        metric_solns.append((search_gears(sets, pitch), pitch))
 
-    # inch sizes
-    for (i, pitch) in inch_solns:
-        display_gears(soln[i], pitch, 'inch')
+    if _ofile.endswith('txt'):
+        s = []
+        for (i, pitch) in inch_solns:
+            s.append(gears_txt(sets[i], pitch, 'inch'))
+        for (i, pitch) in metric_solns:
+            s.append(gears_txt(sets[i], pitch, 'metric'))
+        f = open(_ofile, 'w')
+        f.write('\n'.join(s))
+        f.close()
 
-    # metric sizes
-    for (i, pitch) in metric_solns:
-        display_gears(soln[i], pitch, 'metric')
+
+    if _ofile.endswith('html'):
+        page = []
+        page.append(html.include('info.txt'))
+
+        page.append((html.tag_h2('Inch Solutions')))
+        th = []
+        th.append(html.tag_th('Desired Pitch (tpi)'))
+        th.append(html.tag_th('Actual Pitch (tpi)'))
+        th.append(html.tag_th('Pitch Error'))
+        th.append(html.tag_th('Configuration'))
+        tr = []
+        tr.append(html.tag_tr(html.indent('\n'.join(th))))
+        for (i, pitch) in inch_solns:
+            tr.append(html.tag_tr(gears_html(sets[i], pitch, 'inch')))
+        table = html.tag_table(html.indent('\n'.join(tr)), 'border="1" cellpadding="5"')
+        page.append(table)
+
+        page.append((html.tag_h2('Metric Solutions')))
+        th = []
+        th.append(html.tag_th('Desired Pitch (mm)'))
+        th.append(html.tag_th('Actual Pitch (mm)'))
+        th.append(html.tag_th('Pitch Error'))
+        th.append(html.tag_th('Configuration'))
+        tr = []
+        tr.append(html.tag_tr(html.indent('\n'.join(th))))
+        for (i, pitch) in metric_solns:
+            tr.append(html.tag_tr(gears_html(sets[i], pitch, 'metric')))
+        table = html.tag_table(html.indent('\n'.join(tr)), 'border="1" cellpadding="5"')
+        page.append(table)
+
+        # build the body
+        body = []
+        # add the content
+        body.append('\n'.join(page))
+        body = html.tag_body(html.indent('\n'.join(body)))
+        # build the head
+        head = []
+        head = html.tag_head(html.indent('\n'.join(head)))
+
+        f = open(_ofile, 'w')
+        f.write(html.tag_html(html.indent('\n'.join((head, body)))))
+        f.close()
+
 
 #------------------------------------------------------------------------------
 

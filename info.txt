@@ -1,0 +1,6 @@
+<h1>Change Gears for Common Thread Pitches</h1>
+<ul>
+<li>Gear order is from spindle to leadscrew.</li>
+<li>":" indicates the gears revolve on the same axis</li>
+<li>"-" indicates the gears are meshed</li>
+</ul>

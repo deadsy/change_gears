@@ -7,6 +7,14 @@ html generation/output functions
 """
 #------------------------------------------------------------------------------
 
+def include(name):
+    f = open(name, 'r')
+    txt = f.read()
+    f.close
+    return txt
+
+#------------------------------------------------------------------------------
+
 def text_html(content):
     return 'Content-type: text/html\n\n%s\n' % content
 
