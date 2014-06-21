@@ -1,4 +1,307 @@
-change_gears
-============
+# change_gears
 
 Calculate change gears for an 8x20 lathe.
+
+The spindle of the lathe is geared to the leadscrew so a single revolution of the spindle causes the leadscrew to revolve by a fixed amount, hence, the cutting tool moves a fixed amount for each spindle rotation. By changing the gearing between spindle and leadscrew you can change the amount the saddle moves for every revolution of the spindle. In this way it is possible to cut threads with various pitches. ie- the distance between the threads, typically expressed as a distance, or as threads per inch.
+
+When you want to cut a thread with a certain pitch you look at a table printed on the lathe and it will tell you the configuration and size of the gears that should be used to achieve the desired pitch. There's a problem: not all the thread pitches you may want to cut are printed on the table.
+
+This program takes the set of all change gears and their configurations and works out a pitch solution that most closely matches the desired pitch.
+
+## HTML Output
+
+<h2>Change Gears for Common Thread Pitches</h2>
+<ul>
+<li>Gear order is from spindle to leadscrew.</li>
+<li>":" indicates the gears revolve on the same axis</li>
+<li>"-" indicates the gears are meshed</li>
+</ul>
+
+<h2>Inch Solutions</h2>
+<table border="1" cellpadding="5">
+    <tr>
+    <th>Desired Pitch (tpi)</th>
+    <th>Actual Pitch (tpi)</th>
+    <th>Pitch Error</th>
+    <th>Configuration</th>
+    </tr>
+    <tr>
+    <td>8.0</td>
+    <td>8.00</td>
+    <td>0.00%</td>
+    <td>45-80:90-30</td>
+    </tr>
+    <tr>
+    <td>9.0</td>
+    <td>9.00</td>
+    <td>0.00%</td>
+    <td>35-90-30</td>
+    </tr>
+    <tr>
+    <td>10.0</td>
+    <td>10.00</td>
+    <td>0.00%</td>
+    <td>80:72-90-30</td>
+    </tr>
+    <tr>
+    <td>11.0</td>
+    <td>11.00</td>
+    <td>0.00%</td>
+    <td>66:72-70:70-40</td>
+    </tr>
+    <tr>
+    <td>11.5</td>
+    <td>11.52</td>
+    <td>0.17%</td>
+    <td>100-48:90-72</td>
+    </tr>
+    <tr>
+    <td>12.0</td>
+    <td>12.00</td>
+    <td>0.00%</td>
+    <td>30-90-40</td>
+    </tr>
+    <tr>
+    <td>13.0</td>
+    <td>12.99</td>
+    <td>0.04%</td>
+    <td>60:66-72:68-45</td>
+    </tr>
+    <tr>
+    <td>14.0</td>
+    <td>14.00</td>
+    <td>0.00%</td>
+    <td>40-70:72-48</td>
+    </tr>
+    <tr>
+    <td>16.0</td>
+    <td>16.00</td>
+    <td>0.00%</td>
+    <td>35-80:72-48</td>
+    </tr>
+    <tr>
+    <td>18.0</td>
+    <td>18.00</td>
+    <td>0.00%</td>
+    <td>30-75-60</td>
+    </tr>
+    <tr>
+    <td>20.0</td>
+    <td>20.00</td>
+    <td>0.00%</td>
+    <td>80:75-60:48-50</td>
+    </tr>
+    <tr>
+    <td>24.0</td>
+    <td>24.00</td>
+    <td>0.00%</td>
+    <td>30-66-80</td>
+    </tr>
+    <tr>
+    <td>28.0</td>
+    <td>28.00</td>
+    <td>0.00%</td>
+    <td>30-70:60-80</td>
+    </tr>
+    <tr>
+    <td>32.0</td>
+    <td>32.00</td>
+    <td>0.00%</td>
+    <td>30-80:75-100</td>
+    </tr>
+    <tr>
+    <td>36.0</td>
+    <td>36.00</td>
+    <td>0.00%</td>
+    <td>30-60:50-100</td>
+    </tr>
+    <tr>
+    <td>40.0</td>
+    <td>40.00</td>
+    <td>0.00%</td>
+    <td>100:90-75:50-80</td>
+    </tr>
+    <tr>
+    <td>44.0</td>
+    <td>44.00</td>
+    <td>0.00%</td>
+    <td>100:90-66:40-80</td>
+    </tr>
+    <tr>
+    <td>48.0</td>
+    <td>48.00</td>
+    <td>0.00%</td>
+    <td>30-72:45-100</td>
+    </tr>
+    <tr>
+    <td>56.0</td>
+    <td>56.00</td>
+    <td>0.00%</td>
+    <td>45-70:30-80</td>
+    </tr>
+    <tr>
+    <td>64.0</td>
+    <td>64.00</td>
+    <td>0.00%</td>
+    <td>40:30-72:45-100</td>
+    </tr>
+    <tr>
+    <td>72.0</td>
+    <td>72.00</td>
+    <td>0.00%</td>
+    <td>35-80:30-90</td>
+    </tr>
+    <tr>
+    <td>80.0</td>
+    <td>80.00</td>
+    <td>0.00%</td>
+    <td>100:60-90:45-80</td>
+    </tr>
+</table>
+<h2>Metric Solutions</h2>
+<table border="1" cellpadding="5">
+    <tr>
+    <th>Desired Pitch (mm)</th>
+    <th>Actual Pitch (mm)</th>
+    <th>Pitch Error</th>
+    <th>Configuration</th>
+    </tr>
+    <tr>
+    <td>0.20</td>
+    <td>0.200</td>
+    <td>0.22%</td>
+    <td>66:35-90:40-100</td>
+    </tr>
+    <tr>
+    <td>0.25</td>
+    <td>0.249</td>
+    <td>0.22%</td>
+    <td>66:50-90:35-100</td>
+    </tr>
+    <tr>
+    <td>0.35</td>
+    <td>0.350</td>
+    <td>0.05%</td>
+    <td>100:68-72:35-80</td>
+    </tr>
+    <tr>
+    <td>0.40</td>
+    <td>0.400</td>
+    <td>0.04%</td>
+    <td>80:70-72:35-90</td>
+    </tr>
+    <tr>
+    <td>0.45</td>
+    <td>0.450</td>
+    <td>0.05%</td>
+    <td>80:68-72:45-100</td>
+    </tr>
+    <tr>
+    <td>0.50</td>
+    <td>0.500</td>
+    <td>0.05%</td>
+    <td>90:68-80:45-72</td>
+    </tr>
+    <tr>
+    <td>0.60</td>
+    <td>0.600</td>
+    <td>0.04%</td>
+    <td>48:35-90:70-80</td>
+    </tr>
+    <tr>
+    <td>0.70</td>
+    <td>0.700</td>
+    <td>0.01%</td>
+    <td>48:40-72:50-70</td>
+    </tr>
+    <tr>
+    <td>0.75</td>
+    <td>0.750</td>
+    <td>0.04%</td>
+    <td>72:70-48:35-80</td>
+    </tr>
+    <tr>
+    <td>0.80</td>
+    <td>0.800</td>
+    <td>0.04%</td>
+    <td>40:35-90:70-72</td>
+    </tr>
+    <tr>
+    <td>1.00</td>
+    <td>1.000</td>
+    <td>0.04%</td>
+    <td>72:70-48:35-60</td>
+    </tr>
+    <tr>
+    <td>1.25</td>
+    <td>1.249</td>
+    <td>0.05%</td>
+    <td>72:75-80:68-60</td>
+    </tr>
+    <tr>
+    <td>1.50</td>
+    <td>1.501</td>
+    <td>0.04%</td>
+    <td>72:70-80:70-48</td>
+    </tr>
+    <tr>
+    <td>1.75</td>
+    <td>1.751</td>
+    <td>0.05%</td>
+    <td>68:72-80:75-48</td>
+    </tr>
+    <tr>
+    <td>2.00</td>
+    <td>1.999</td>
+    <td>0.05%</td>
+    <td>100-60:68-48</td>
+    </tr>
+    <tr>
+    <td>2.50</td>
+    <td>2.492</td>
+    <td>0.31%</td>
+    <td>66:68-100-35</td>
+    </tr>
+    <tr>
+    <td>3.00</td>
+    <td>2.999</td>
+    <td>0.05%</td>
+    <td>100-48:68-40</td>
+    </tr>
+    <tr>
+    <td>3.50</td>
+    <td>3.483</td>
+    <td>0.47%</td>
+    <td>100-50:72-35</td>
+    </tr>
+    <tr>
+    <td>4.00</td>
+    <td>3.998</td>
+    <td>0.05%</td>
+    <td>100-48:68-30</td>
+    </tr>
+    <tr>
+    <td>4.50</td>
+    <td>4.516</td>
+    <td>0.35%</td>
+    <td>70-50:80-30</td>
+    </tr>
+    <tr>
+    <td>5.00</td>
+    <td>5.017</td>
+    <td>0.35%</td>
+    <td>70-45:80-30</td>
+    </tr>
+    <tr>
+    <td>5.50</td>
+    <td>5.483</td>
+    <td>0.31%</td>
+    <td>100-35:68-30</td>
+    </tr>
+    <tr>
+    <td>6.00</td>
+    <td>6.048</td>
+    <td>0.79%</td>
+    <td>80-30:75-35</td>
+    </tr>
+</table>
