@@ -183,7 +183,7 @@ def search_gears(sets, pitch):
     hi = len(sets) - 1
     lo = 0
     while hi - lo > 1:
-        i = (hi + lo) / 2
+        i = int((hi + lo) / 2)
         if sets[i][0] >= pitch:
             # move to lower pitch values
             hi = i
@@ -266,7 +266,7 @@ def gears_html(soln, goal, mode):
 
 #------------------------------------------------------------------------------
 
-_ofile = 'stuff.html'
+_ofile = 'output.html'
 
 def main():
 
